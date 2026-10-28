@@ -23,7 +23,7 @@
   const INCOME_BADGE = { emoji: '💰', color: '#0EA5E9' };
 
   // Licensed banks of Sri Lanka (CBSL list as at 31 Dec 2025). `short` pre-fills the account name;
-  // `aka` holds extra search words. Logos live in icons/banks/<id>.jpg.
+  // `aka` holds extra search words. Logos live in icons/banks/<id>.png.
   const BANKS = [
     { id: 'amana', name: 'Amana Bank PLC', short: 'Amana Bank' },
     { id: 'boc', name: 'Bank of Ceylon', short: 'BOC', aka: 'boc' },
@@ -303,7 +303,7 @@
   /** Bank logo tile for an account (or a bank), falling back to a plain bank emoji. */
   function bankBadge(bankId, fallback = '🏦') {
     const bank = bankById(bankId);
-    if (bank && !bank.noLogo) return `<span class="badge logo"><img src="icons/banks/${esc(bank.id)}.jpg" alt=""></span>`;
+    if (bank && !bank.noLogo) return `<span class="badge logo"><img src="icons/banks/${esc(bank.id)}.png" alt=""></span>`;
     return `<span class="badge" style="background:${tint('#0EA5E9')}">${esc(fallback)}</span>`;
   }
 

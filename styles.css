@@ -307,7 +307,7 @@ dialog#sheet::backdrop, dialog#accountSheet::backdrop { background: rgba(0, 0, 0
 #accountForm .field-stack + .field-stack { border-top: 1px solid var(--border); }
 
 /* ---------- Bank picker + logos ---------- */
-.badge.logo { width: 56px; padding: 4px; background: #fff; overflow: hidden; }
+.badge.logo { width: 56px; padding: 0; background: none; border-radius: 0; overflow: visible; }
 .badge.logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .cat-list .badge.logo { width: 48px; }
 .bank-select {
