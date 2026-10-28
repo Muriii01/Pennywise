@@ -154,8 +154,33 @@ h2.section-title {
 .stat-total { display: flex; flex-direction: column; gap: 2px; }
 .stat-total .big { font-size: 30px; font-weight: 750; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 .stat-total .sub { color: var(--muted); font-size: 14px; }
-.stat-total .up { color: var(--danger); }
-.stat-total .down { color: var(--accent); }
+.stat-total .bad { color: var(--danger); }
+.stat-total .good { color: var(--accent); }
+.view > .seg { margin-top: 0; }
+
+.flow { padding: 4px 16px; }
+.flow > div { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 40px; }
+.flow > div + div { border-top: 1px solid var(--border); }
+.flow .sub { color: var(--muted); font-size: 14px; }
+.flow b { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.flow .neg { color: var(--danger); }
+
+/* ---------- Accounts ---------- */
+.net-worth { display: flex; flex-direction: column; gap: 2px; }
+.net-worth .sub { color: var(--muted); font-size: 14px; }
+.net-worth .big { font-size: 30px; font-weight: 750; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.net-worth .big.neg { color: var(--danger); }
+.acct-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.acct-card { width: 100%; text-align: left; display: block; color: var(--text); }
+.acct-card:active { background: var(--surface-2); }
+.acct-card .top { display: flex; align-items: center; gap: 12px; }
+.acct-card .badge { width: 40px; height: 40px; }
+.acct-card .who { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.acct-card .who b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acct-card .who span { font-size: 13px; color: var(--muted); }
+.acct-card .bal { font-size: 19px; font-weight: 750; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.acct-card .bal.neg { color: var(--danger); }
+.acct-card .meta { display: flex; justify-content: space-between; gap: 12px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
 
 .donut { position: relative; width: min(230px, 62vw); margin: 4px auto 14px; aspect-ratio: 1; }
 .donut svg { width: 100%; height: 100%; display: block; stroke-linecap: butt; }
@@ -244,7 +269,7 @@ h2.section-title {
   background: var(--surface); border-top: 1px solid var(--border);
   padding-bottom: env(safe-area-inset-bottom);
 }
-.tabbar-inner { max-width: 640px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); }
+.tabbar-inner { max-width: 640px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); }
 .tab {
   height: var(--tabbar-h); background: none; border: 0; color: var(--muted);
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
