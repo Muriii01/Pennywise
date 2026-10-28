@@ -305,6 +305,33 @@ dialog#sheet::backdrop, dialog#accountSheet::backdrop { background: rgba(0, 0, 0
 #expenseForm { padding: 8px 20px calc(20px + env(safe-area-inset-bottom)); display: grid; gap: 4px; }
 #accountForm { padding: 8px 20px calc(20px + env(safe-area-inset-bottom)); display: grid; }
 #accountForm .field-stack + .field-stack { border-top: 1px solid var(--border); }
+
+/* ---------- Bank picker + logos ---------- */
+.badge.logo { width: 56px; padding: 0; background: none; border-radius: 0; overflow: visible; }
+.badge.logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.cat-list .badge.logo { width: 48px; }
+.bank-select {
+  width: 100%; min-height: 52px; display: flex; align-items: center; gap: 12px; text-align: left;
+  border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); padding: 6px 12px;
+}
+.bank-select .badge { width: 40px; height: 36px; font-size: 18px; border-radius: 8px; }
+.bank-select .badge.logo { width: 56px; }
+.bank-select .name { flex: 1; min-width: 0; font-weight: 600; }
+.bank-select .name.placeholder { color: var(--muted); font-weight: 400; }
+.bank-select .chev { color: var(--muted); }
+#bankPicker { padding: 8px 0 calc(8px + env(safe-area-inset-bottom)); }
+.bank-list { list-style: none; margin: 10px 0 0; padding: 0; }
+.bank-list li + li { border-top: 1px solid var(--border); }
+.bank-list button {
+  width: 100%; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 4px;
+  background: none; border: 0; text-align: left;
+}
+.bank-list button:active, .bank-list button[aria-selected="true"] { background: var(--surface-2); }
+.bank-list .badge { width: 40px; height: 36px; font-size: 18px; border-radius: 8px; }
+.bank-list .badge.logo { width: 56px; }
+.bank-list .name { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.bank-list .name small { color: var(--muted); font-size: 12px; }
+.bank-list .empty { padding: 24px; }
 #accountForm .note { margin: 4px 0 8px; }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; }
 .sheet-head h2 { margin: 0; font-size: 18px; }

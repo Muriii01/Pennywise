@@ -41,6 +41,8 @@ Netlify Drop (app.netlify.com/drop) also works: drag the folder in and claim the
 
 - **Multiple accounts** (e.g. one bank for spending, one for savings), each with its own
   currency, running balance and monthly budget
+- Pick an account's bank from a searchable list of all licensed banks in Sri Lanka, and its
+  logo is used as the account's icon
 - Add, edit and delete income or expenses (amount, category, date, note); undo after delete
 - Monthly summary, running balance, optional budget bar and daily average
 - **Home tab**: every account's current balance, this month's money in and out, and the total
@@ -80,6 +82,9 @@ and deploy it as a Web App. You'll end up with two values:
 Paste both into Pennywise → Settings → **Automatic sync**.
 
 ### 2. Set each account's Sync tag
+
+> **Paused:** the Sync tag field has been taken out of the account form while automatic
+> sync is switched off. Existing tags are kept, so `combank` and `ntb` still route correctly.
 
 Settings → tap **Edit** on an account → **Sync tag** → e.g. `combank` for your Commercial
 Bank account, `ntb` for Nations Trust Bank. This has to exactly match the `account` value

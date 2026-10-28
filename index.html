@@ -139,6 +139,16 @@
         </button>
       </div>
 
+      <div id="bankPicker" hidden>
+        <div class="search">
+          <input id="bankSearch" type="search" placeholder="Search banks" aria-label="Search banks" autocomplete="off" spellcheck="false">
+        </div>
+        <ul class="bank-list" id="bankList"></ul>
+      </div>
+
+      <div id="acctFields">
+      <div class="field-stack"><span id="acctBankLabel">Bank</span>
+        <button type="button" class="bank-select" id="acctBankBtn" aria-labelledby="acctBankLabel acctBankBtn"></button></div>
       <label class="field-stack"><span>Name</span>
         <input id="acctName" maxlength="40" placeholder="e.g. NTB Savings" autocomplete="off" required></label>
       <label class="field-stack"><span>Currency</span>
@@ -149,15 +159,13 @@
         <input type="date" id="acctBalanceDate"></label>
       <label class="field-stack"><span>Monthly budget</span>
         <input id="acctBudget" inputmode="decimal" autocomplete="off" placeholder="None"></label>
-      <label class="field-stack"><span>Sync tag</span>
-        <input id="acctTag" maxlength="40" autocomplete="off" spellcheck="false" placeholder="e.g. combank or ntb"></label>
-      <p class="note">The sync tag must exactly match the "account" value the iOS Shortcut sends for this bank, so incoming SMS transactions land in the right place.</p>
 
       <p class="form-error" id="accountFormError" role="alert" hidden></p>
 
       <div class="sheet-actions">
         <button type="button" class="btn danger" id="acctDeleteBtn" hidden>Delete</button>
         <button type="submit" class="btn primary">Save</button>
+      </div>
       </div>
     </form>
   </dialog>

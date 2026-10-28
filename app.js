@@ -22,6 +22,42 @@
   const FALLBACK_CATEGORY = DEFAULT_CATEGORIES[DEFAULT_CATEGORIES.length - 1];
   const INCOME_BADGE = { emoji: '💰', color: '#0EA5E9' };
 
+  // Licensed banks of Sri Lanka (CBSL list as at 31 Dec 2025). `short` pre-fills the account name;
+  // `aka` holds extra search words. Logos live in icons/banks/<id>.png.
+  const BANKS = [
+    { id: 'amana', name: 'Amana Bank PLC', short: 'Amana Bank' },
+    { id: 'boc', name: 'Bank of Ceylon', short: 'BOC', aka: 'boc' },
+    { id: 'boch', name: 'Bank of China Ltd.', short: 'Bank of China' },
+    { id: 'cargills', name: 'Cargills Bank PLC', short: 'Cargills Bank' },
+    { id: 'citi', name: 'Citibank, N.A.', short: 'Citibank', aka: 'citi' },
+    { id: 'combank', name: 'Commercial Bank of Ceylon PLC', short: 'Commercial Bank', aka: 'combank com bank' },
+    { id: 'deutsche', name: 'Deutsche Bank AG', short: 'Deutsche Bank' },
+    { id: 'dfcc', name: 'DFCC Bank PLC', short: 'DFCC Bank' },
+    { id: 'hbl', name: 'Habib Bank Ltd.', short: 'HBL', aka: 'hbl' },
+    { id: 'hnb', name: 'Hatton National Bank PLC', short: 'HNB', aka: 'hnb' },
+    { id: 'indianbank', name: 'Indian Bank', short: 'Indian Bank' },
+    { id: 'iob', name: 'Indian Overseas Bank', short: 'Indian Overseas Bank', aka: 'iob' },
+    { id: 'mcb', name: 'MCB Bank Ltd.', short: 'MCB Bank' },
+    { id: 'ndb', name: 'National Development Bank PLC', short: 'NDB', aka: 'ndb' },
+    { id: 'ntb', name: 'Nations Trust Bank PLC', short: 'NTB', aka: 'ntb' },
+    { id: 'pabc', name: 'Pan Asia Banking Corporation PLC', short: 'Pan Asia Bank', aka: 'pabc' },
+    { id: 'peoples', name: "People's Bank", short: "People's Bank", aka: 'peoples' },
+    { id: 'publicbank', name: 'Public Bank Berhad', short: 'Public Bank' },
+    { id: 'sampath', name: 'Sampath Bank PLC', short: 'Sampath Bank' },
+    { id: 'seylan', name: 'Seylan Bank PLC', short: 'Seylan Bank' },
+    { id: 'scb', name: 'Standard Chartered Bank', short: 'Standard Chartered', aka: 'scb stanchart' },
+    { id: 'sbi', name: 'State Bank of India', short: 'SBI', aka: 'sbi' },
+    { id: 'hsbc', name: 'The Hongkong & Shanghai Banking Corporation Ltd. (HSBC)', short: 'HSBC' },
+    { id: 'unionbank', name: 'Union Bank of Colombo PLC', short: 'Union Bank' },
+    { id: 'hdfc', name: 'Housing Development Finance Corporation Bank of Sri Lanka (HDFC)', short: 'HDFC Bank' },
+    { id: 'nsb', name: 'National Savings Bank', short: 'NSB', aka: 'nsb' },
+    { id: 'rdb', name: 'Pradeshiya Sanwardhana Bank', short: 'Pradeshiya Sanwardhana Bank', aka: 'rdb regional development' },
+    { id: 'sdb', name: 'SANASA Development Bank PLC', short: 'SDB Bank', aka: 'sdb' },
+    { id: 'slsb', name: 'Sri Lanka Savings Bank Ltd.', short: 'Sri Lanka Savings Bank', aka: 'slsb', noLogo: true },
+    { id: 'smib', name: 'State Mortgage and Investment Bank', short: 'SMIB', aka: 'smib' },
+  ];
+  const bankById = (id) => BANKS.find((b) => b.id === id);
+
   const CURRENCIES = [
     'LKR', 'USD', 'EUR', 'GBP', 'INR', 'PKR', 'BDT', 'AED', 'SAR', 'QAR', 'KWD', 'CAD', 'AUD', 'NZD',
     'JPY', 'CNY', 'KRW', 'SGD', 'MYR', 'IDR', 'PHP', 'THB', 'TRY', 'EGP', 'NGN', 'ZAR', 'KES',
@@ -104,6 +140,7 @@
       name: 'Main Account',
       currency: guessCurrency(),
       remoteTag: '',
+      bankId: '',
       startingBalance: 0,
       startingDate: isoDate(new Date()),
       budget: 0,
@@ -136,6 +173,9 @@
       name: typeof a.name === 'string' && a.name.trim() ? a.name.trim().slice(0, 40) : 'Account',
       currency: (typeof a.currency === 'string' && isValidCurrency(a.currency)) ? a.currency : 'LKR',
       remoteTag: typeof a.remoteTag === 'string' ? a.remoteTag.trim().slice(0, 40) : '',
+      // Accounts made before banks existed get one guessed from their sync tag (e.g. "combank").
+      bankId: bankById(a.bankId) ? a.bankId
+        : (a.bankId === undefined && typeof a.remoteTag === 'string' && bankById(a.remoteTag.trim().toLowerCase()) ? a.remoteTag.trim().toLowerCase() : ''),
       startingBalance: Number.isFinite(a.startingBalance) ? Math.round(a.startingBalance) : 0,
       startingDate: /^\d{4}-\d{2}-\d{2}$/.test(a.startingDate) ? a.startingDate : isoDate(new Date()),
       budget: Number.isFinite(a.budget) && a.budget > 0 ? Math.round(a.budget) : 0,
@@ -258,6 +298,13 @@
       bal += t.type === 'credit' ? t.amount : -t.amount;
     }
     return bal;
+  }
+
+  /** Bank logo tile for an account (or a bank), falling back to a plain bank emoji. */
+  function bankBadge(bankId, fallback = '🏦') {
+    const bank = bankById(bankId);
+    if (bank && !bank.noLogo) return `<span class="badge logo"><img src="icons/banks/${esc(bank.id)}.png" alt=""></span>`;
+    return `<span class="badge" style="background:${tint('#0EA5E9')}">${esc(fallback)}</span>`;
   }
 
   /* ---------- Formatting ---------- */
@@ -440,9 +487,10 @@
       const items = state.transactions.filter((t) => t.accountId === a.id && inMonth(t, today.getFullYear(), today.getMonth()));
       const income = sum(items.filter((t) => t.type === 'credit'));
       const spent = sum(items.filter((t) => t.type === 'debit'));
-      const sub = [a.currency, a.remoteTag && `Sync: ${a.remoteTag}`].filter(Boolean).join(' · ');
+      const bank = bankById(a.bankId);
+      const sub = [bank && bank.short !== a.name ? bank.short : '', a.currency].filter(Boolean).join(' · ');
       cards += `<li><button type="button" class="card acct-card" data-open-account="${esc(a.id)}">
-        <span class="top"><span class="badge" style="background:${tint('#0EA5E9')}">🏦</span>
+        <span class="top">${bankBadge(a.bankId)}
           <span class="who"><b>${esc(a.name)}</b><span>${esc(sub)}</span></span>
           <span class="bal${bal < 0 ? ' neg' : ''}">${moneyIn(bal, a.currency)}</span></span>
         <span class="meta"><span>In +${moneyIn(income, a.currency)}</span><span>Out ${moneyIn(spent, a.currency)}</span></span>
@@ -583,8 +631,8 @@
       <h2 class="section-title">Accounts</h2>
       <div class="card group">
         <ul class="cat-list">${state.accounts.map((a) => `<li>
-          <span class="badge" style="background:${tint('#14161A')}">${a.id === state.activeAccountId ? '★' : '🏦'}</span>
-          <span class="name">${esc(a.name)} <span style="color:var(--muted);font-weight:400">(${esc(a.currency)}${a.remoteTag ? ' · ' + esc(a.remoteTag) : ''})</span></span>
+          ${bankBadge(a.bankId)}
+          <span class="name">${esc(a.name)} <span style="color:var(--muted);font-weight:400">(${esc(a.currency)})</span></span>
           <button type="button" class="link-btn" data-edit-account="${esc(a.id)}" style="color:var(--accent)">Edit</button></li>`).join('')}
         </ul>
       </div>
@@ -818,17 +866,71 @@
     $('#acctBalance').value = account ? String(account.startingBalance / 100) : '';
     $('#acctBalanceDate').value = account ? account.startingDate : isoDate(new Date());
     $('#acctBudget').value = account && account.budget ? String(account.budget / 100) : '';
-    $('#acctTag').value = account ? account.remoteTag : '';
+    setSheetBank(account ? account.bankId : '');
+    showBankPicker(false);
 
     accountSheet.showModal();
-    if (!account) $('#acctName').focus();
+    if (!account) showBankPicker(true);
   }
 
   function closeAccountSheet() { if (accountSheet.open) accountSheet.close(); }
 
+  /* Bank picker inside the account sheet */
+  let sheetBankId = '';
+  function setSheetBank(id) {
+    sheetBankId = bankById(id) ? id : '';
+    const bank = bankById(sheetBankId);
+    $('#acctBankBtn').innerHTML = (bank ? `${bankBadge(bank.id)}<span class="name">${esc(bank.name)}</span>` : '<span class="name placeholder">Choose your bank</span>')
+      + '<svg class="chev" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
+  }
+
+  function showBankPicker(show) {
+    $('#bankPicker').hidden = !show;
+    $('#acctFields').hidden = show;
+    $('#accountSheetTitle').textContent = show ? 'Choose your bank' : (editingAccountId ? 'Edit account' : 'New account');
+    if (show) {
+      $('#bankSearch').value = '';
+      renderBankList();
+      $('#bankSearch').focus();
+    }
+  }
+
+  function renderBankList() {
+    const q = $('#bankSearch').value.trim().toLowerCase();
+    const matches = BANKS.filter((b) => !q || `${b.name} ${b.short} ${b.aka || ''}`.toLowerCase().includes(q));
+    const row = (id, badge, title, sub) => `<li><button type="button" data-bank="${esc(id)}" aria-selected="${id === sheetBankId}">
+      ${badge}<span class="name"><span>${esc(title)}</span>${sub ? `<small>${esc(sub)}</small>` : ''}</span></button></li>`;
+    $('#bankList').innerHTML = matches.map((b) => row(b.id, bankBadge(b.id), b.name, b.short !== b.name ? b.short : '')).join('')
+      + (matches.length ? '' : '<li class="empty">No bank matches that search.</li>')
+      + row('', bankBadge(''), 'Other / not listed', 'Cash, wallet, or a bank not on the list');
+  }
+
+  function pickBank(id) {
+    const prev = bankById(sheetBankId);
+    const name = $('#acctName').value.trim();
+    setSheetBank(id);
+    // Fill in the name unless the user already typed their own.
+    const bank = bankById(id);
+    if (bank && (!name || (prev && name === prev.short))) $('#acctName').value = bank.short;
+    showBankPicker(false);
+  }
+
+  $('#acctBankBtn').addEventListener('click', () => showBankPicker(true));
+  $('#bankSearch').addEventListener('input', renderBankList);
+  $('#bankSearch').addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Enter') return;
+    ev.preventDefault(); // don't submit the account form
+    const first = $('#bankList button');
+    if (first) pickBank(first.dataset.bank);
+  });
+  $('#bankList').addEventListener('click', (ev) => {
+    const btn = ev.target.closest('button[data-bank]');
+    if (btn) pickBank(btn.dataset.bank);
+  });
+
   $('#accountForm').addEventListener('submit', (ev) => {
     ev.preventDefault();
-    const name = $('#acctName').value.trim();
+    const name = $('#acctName').value.trim() || (bankById(sheetBankId) ? bankById(sheetBankId).short : '');
     const errEl = $('#accountFormError');
     errEl.hidden = true;
     if (!name) { errEl.textContent = 'Give the account a name.'; errEl.hidden = false; return; }
@@ -841,17 +943,12 @@
     const budget = budgetRaw === '' ? 0 : parseAmount(budgetRaw);
     if (!Number.isFinite(budget) || budget < 0) { errEl.textContent = 'Enter a valid budget.'; errEl.hidden = false; return; }
 
-    const tag = $('#acctTag').value.trim();
-    if (state.accounts.some((a) => a.id !== editingAccountId && a.remoteTag && a.remoteTag === tag)) {
-      errEl.textContent = 'Another account already uses that sync tag.'; errEl.hidden = false; return;
-    }
-
     const fields = {
       name, budget,
       currency: $('#acctCurrency').value,
       startingBalance: balance,
       startingDate: $('#acctBalanceDate').value || isoDate(new Date()),
-      remoteTag: tag,
+      bankId: sheetBankId,
     };
 
     if (editingAccountId) {
@@ -1157,7 +1254,11 @@
   });
   sheet.addEventListener('click', (ev) => { if (ev.target === sheet) closeSheet(); });
 
-  $('#accountSheetClose').addEventListener('click', closeAccountSheet);
+  $('#accountSheetClose').addEventListener('click', () => {
+    // From the picker, X goes back to the form, unless this is a brand-new account with nothing chosen yet.
+    if (!$('#bankPicker').hidden && (editingAccountId || sheetBankId || $('#acctName').value.trim())) showBankPicker(false);
+    else closeAccountSheet();
+  });
   accountSheet.addEventListener('click', (ev) => { if (ev.target === accountSheet) closeAccountSheet(); });
 
   const settingsView = $('#view-settings');
