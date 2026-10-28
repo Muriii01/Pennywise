@@ -244,7 +244,7 @@
   let state = load();
 
   const now0 = new Date();
-  const ui = { tab: 'list', year: now0.getFullYear(), month: now0.getMonth(), query: '', statsType: 'debit' };
+  const ui = { tab: 'home', year: now0.getFullYear(), month: now0.getMonth(), query: '', statsType: 'debit' };
 
   /* ---------- Accounts ---------- */
 
@@ -309,20 +309,25 @@
     setFormatters();
     renderAccountBar();
 
-    $('#monthNav').hidden = ui.tab === 'settings';
-    $('#pageTitle').hidden = ui.tab !== 'settings';
+    const titled = ui.tab === 'home' || ui.tab === 'settings';
+    $('#monthNav').hidden = titled;
+    $('#titleBar').hidden = !titled;
+    $('#pageTitle').textContent = ui.tab === 'settings' ? 'Settings' : 'Home';
+    $('#backBtn').hidden = ui.tab !== 'settings';
+    $('#settingsBtn').hidden = ui.tab !== 'home';
     $('#monthLabel').textContent = monthName(ui.year, ui.month, { month: 'long', year: 'numeric' });
 
     for (const tab of document.querySelectorAll('.tab')) {
-      if (tab.dataset.tab === ui.tab) tab.setAttribute('aria-current', 'page');
+      // Settings is reached from Home, so Home stays highlighted there.
+      if (tab.dataset.tab === (ui.tab === 'settings' ? 'home' : ui.tab)) tab.setAttribute('aria-current', 'page');
       else tab.removeAttribute('aria-current');
     }
-    for (const name of ['list', 'accounts', 'stats', 'settings']) $(`#view-${name}`).hidden = ui.tab !== name;
-    $('#accountBar').hidden = ui.tab === 'accounts';
+    for (const name of ['home', 'list', 'stats', 'settings']) $(`#view-${name}`).hidden = ui.tab !== name;
+    $('#accountBar').hidden = ui.tab === 'home';
     $('#fab').hidden = ui.tab !== 'list';
 
     if (ui.tab === 'list') renderList();
-    else if (ui.tab === 'accounts') renderAccounts();
+    else if (ui.tab === 'home') renderHome();
     else if (ui.tab === 'stats') renderStats();
     else renderSettings();
   }
@@ -423,16 +428,16 @@
     </div>`;
   }
 
-  /* ---------- Rendering: accounts ---------- */
+  /* ---------- Rendering: home (all accounts) ---------- */
 
-  function renderAccounts() {
-    const mName = monthName(ui.year, ui.month, { month: 'long' });
+  function renderHome() {
+    const today = new Date();
     const byCurrency = new Map();
     let cards = '';
     for (const a of state.accounts) {
       const bal = computeBalance(a);
       byCurrency.set(a.currency, (byCurrency.get(a.currency) || 0) + bal);
-      const items = state.transactions.filter((t) => t.accountId === a.id && inMonth(t));
+      const items = state.transactions.filter((t) => t.accountId === a.id && inMonth(t, today.getFullYear(), today.getMonth()));
       const income = sum(items.filter((t) => t.type === 'credit'));
       const spent = sum(items.filter((t) => t.type === 'debit'));
       const sub = [a.currency, a.remoteTag && `Sync: ${a.remoteTag}`].filter(Boolean).join(' · ');
@@ -440,18 +445,18 @@
         <span class="top"><span class="badge" style="background:${tint('#0EA5E9')}">🏦</span>
           <span class="who"><b>${esc(a.name)}</b><span>${esc(sub)}</span></span>
           <span class="bal${bal < 0 ? ' neg' : ''}">${moneyIn(bal, a.currency)}</span></span>
-        <span class="meta"><span>${esc(mName)}: +${moneyIn(income, a.currency)} in</span><span>${moneyIn(spent, a.currency)} out</span></span>
+        <span class="meta"><span>In +${moneyIn(income, a.currency)}</span><span>Out ${moneyIn(spent, a.currency)}</span></span>
       </button></li>`;
     }
 
     const totals = [...byCurrency];
     const totalHtml = totals.map(([cur, bal]) => `<span class="big${bal < 0 ? ' neg' : ''}">${moneyIn(bal, cur)}</span>`).join('');
     const count = state.accounts.length;
-    $('#view-accounts').innerHTML = `
+    $('#view-home').innerHTML = `
       <div class="card net-worth"><span class="sub">Total across ${count} account${count === 1 ? '' : 's'}${totals.length > 1 ? ', by currency' : ''}</span>${totalHtml}</div>
       <ul class="acct-list">${cards}</ul>
       <button type="button" class="btn" data-add-account style="width:100%">+ Add account</button>
-      <p class="note">Tap an account to see its transactions.</p>`;
+      <p class="note">In and Out are for this month. Tap an account to see its transactions.</p>`;
   }
 
   /* ---------- Rendering: stats ---------- */
@@ -1122,7 +1127,10 @@
     renderStats();
   });
 
-  $('#view-accounts').addEventListener('click', (ev) => {
+  $('#settingsBtn').addEventListener('click', () => { ui.tab = 'settings'; render(); window.scrollTo(0, 0); });
+  $('#backBtn').addEventListener('click', () => { ui.tab = 'home'; render(); window.scrollTo(0, 0); });
+
+  $('#view-home').addEventListener('click', (ev) => {
     if (ev.target.closest('[data-add-account]')) { openAccountSheet(null); return; }
     const card = ev.target.closest('[data-open-account]');
     if (!card || !acctById(card.dataset.openAccount)) return;

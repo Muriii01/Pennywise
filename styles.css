@@ -70,6 +70,8 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
   background: none; border: 0; padding: 8px 12px; border-radius: 10px;
   font-size: 19px; font-weight: 700; letter-spacing: -.01em;
 }
+.title-bar { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; }
+.title-bar .icon-btn[hidden] { display: grid !important; visibility: hidden; }
 .page-title { margin: 0; padding: 8px 12px; font-size: 19px; font-weight: 700; text-align: center; }
 .icon-btn {
   width: 44px; height: 44px; display: grid; place-items: center;
@@ -269,7 +271,7 @@ h2.section-title {
   background: var(--surface); border-top: 1px solid var(--border);
   padding-bottom: env(safe-area-inset-bottom);
 }
-.tabbar-inner { max-width: 640px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); }
+.tabbar-inner { max-width: 640px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); }
 .tab {
   height: var(--tabbar-h); background: none; border: 0; color: var(--muted);
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
