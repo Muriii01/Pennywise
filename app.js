@@ -244,7 +244,7 @@
   let state = load();
 
   const now0 = new Date();
-  const ui = { tab: 'list', year: now0.getFullYear(), month: now0.getMonth(), query: '' };
+  const ui = { tab: 'home', year: now0.getFullYear(), month: now0.getMonth(), query: '', statsType: 'debit' };
 
   /* ---------- Accounts ---------- */
 
@@ -309,18 +309,25 @@
     setFormatters();
     renderAccountBar();
 
-    $('#monthNav').hidden = ui.tab === 'settings';
-    $('#pageTitle').hidden = ui.tab !== 'settings';
+    const titled = ui.tab === 'home' || ui.tab === 'settings';
+    $('#monthNav').hidden = titled;
+    $('#titleBar').hidden = !titled;
+    $('#pageTitle').textContent = ui.tab === 'settings' ? 'Settings' : 'Home';
+    $('#backBtn').hidden = ui.tab !== 'settings';
+    $('#settingsBtn').hidden = ui.tab !== 'home';
     $('#monthLabel').textContent = monthName(ui.year, ui.month, { month: 'long', year: 'numeric' });
 
     for (const tab of document.querySelectorAll('.tab')) {
-      if (tab.dataset.tab === ui.tab) tab.setAttribute('aria-current', 'page');
+      // Settings is reached from Home, so Home stays highlighted there.
+      if (tab.dataset.tab === (ui.tab === 'settings' ? 'home' : ui.tab)) tab.setAttribute('aria-current', 'page');
       else tab.removeAttribute('aria-current');
     }
-    for (const name of ['list', 'stats', 'settings']) $(`#view-${name}`).hidden = ui.tab !== name;
+    for (const name of ['home', 'list', 'stats', 'settings']) $(`#view-${name}`).hidden = ui.tab !== name;
+    $('#accountBar').hidden = ui.tab === 'home';
     $('#fab').hidden = ui.tab !== 'list';
 
     if (ui.tab === 'list') renderList();
+    else if (ui.tab === 'home') renderHome();
     else if (ui.tab === 'stats') renderStats();
     else renderSettings();
   }
@@ -421,7 +428,40 @@
     </div>`;
   }
 
+  /* ---------- Rendering: home (all accounts) ---------- */
+
+  function renderHome() {
+    const today = new Date();
+    const byCurrency = new Map();
+    let cards = '';
+    for (const a of state.accounts) {
+      const bal = computeBalance(a);
+      byCurrency.set(a.currency, (byCurrency.get(a.currency) || 0) + bal);
+      const items = state.transactions.filter((t) => t.accountId === a.id && inMonth(t, today.getFullYear(), today.getMonth()));
+      const income = sum(items.filter((t) => t.type === 'credit'));
+      const spent = sum(items.filter((t) => t.type === 'debit'));
+      const sub = [a.currency, a.remoteTag && `Sync: ${a.remoteTag}`].filter(Boolean).join(' · ');
+      cards += `<li><button type="button" class="card acct-card" data-open-account="${esc(a.id)}">
+        <span class="top"><span class="badge" style="background:${tint('#0EA5E9')}">🏦</span>
+          <span class="who"><b>${esc(a.name)}</b><span>${esc(sub)}</span></span>
+          <span class="bal${bal < 0 ? ' neg' : ''}">${moneyIn(bal, a.currency)}</span></span>
+        <span class="meta"><span>In +${moneyIn(income, a.currency)}</span><span>Out ${moneyIn(spent, a.currency)}</span></span>
+      </button></li>`;
+    }
+
+    const totals = [...byCurrency];
+    const totalHtml = totals.map(([cur, bal]) => `<span class="big${bal < 0 ? ' neg' : ''}">${moneyIn(bal, cur)}</span>`).join('');
+    const count = state.accounts.length;
+    $('#view-home').innerHTML = `
+      <div class="card net-worth"><span class="sub">Total across ${count} account${count === 1 ? '' : 's'}${totals.length > 1 ? ', by currency' : ''}</span>${totalHtml}</div>
+      <ul class="acct-list">${cards}</ul>
+      <button type="button" class="btn" data-add-account style="width:100%">+ Add account</button>
+      <p class="note">In and Out are for this month. Tap an account to see its transactions.</p>`;
+  }
+
   /* ---------- Rendering: stats ---------- */
+
+  const SOURCE_COLORS = DEFAULT_CATEGORIES.map((c) => c.color).concat(EXTRA_COLORS);
 
   function categoryTotals(items) {
     const map = new Map();
@@ -429,7 +469,19 @@
     return [...map].map(([id, total]) => ({ cat: catById(id), total })).sort((a, b) => b.total - a.total);
   }
 
-  function donutSvg(rows, total) {
+  /** Income has no categories, so group it by its note (the payer / source). */
+  function sourceTotals(items) {
+    const map = new Map();
+    for (const t of items) {
+      const key = t.note.trim() || 'Income';
+      map.set(key, (map.get(key) || 0) + t.amount);
+    }
+    return [...map].sort((a, b) => b[1] - a[1]).map(([name, total], i) => ({
+      cat: { name, emoji: INCOME_BADGE.emoji, color: SOURCE_COLORS[i % SOURCE_COLORS.length] }, total,
+    }));
+  }
+
+  function donutSvg(rows, total, label) {
     let acc = 0;
     const segs = rows.map((r) => {
       const pct = (r.total / total) * 100;
@@ -438,15 +490,20 @@
       acc += pct;
       return seg;
     }).join('');
-    return `<svg viewBox="0 0 42 42" role="img" aria-label="Spending by category"><circle cx="21" cy="21" r="15.9155" stroke="var(--track)" stroke-width="5"/>${segs}</svg>`;
+    return `<svg viewBox="0 0 42 42" role="img" aria-label="${esc(label)}"><circle cx="21" cy="21" r="15.9155" stroke="var(--track)" stroke-width="5"/>${segs}</svg>`;
   }
 
   function renderStats() {
     const acct = activeAccount();
-    const forAccount = (y, m) => state.transactions.filter((t) => t.accountId === acct.id && t.type === 'debit' && inMonth(t, y, m));
+    const isIncome = ui.statsType === 'credit';
+    const forAccount = (y, m, type = ui.statsType) => state.transactions.filter((t) => t.accountId === acct.id && t.type === type && inMonth(t, y, m));
     const items = forAccount(ui.year, ui.month);
     const total = sum(items);
     const host = $('#view-stats');
+
+    const income = isIncome ? total : sum(forAccount(ui.year, ui.month, 'credit'));
+    const spent = isIncome ? sum(forAccount(ui.year, ui.month, 'debit')) : total;
+    const net = income - spent;
 
     const prev = new Date(ui.year, ui.month - 1, 1);
     const prevTotal = sum(forAccount(prev.getFullYear(), prev.getMonth()));
@@ -454,18 +511,32 @@
     if (prevTotal > 0 && total > 0) {
       const change = Math.round(((total - prevTotal) / prevTotal) * 100);
       const prevName = monthName(prev.getFullYear(), prev.getMonth(), { month: 'long' });
+      // More spending is bad, more income is good.
+      const tone = (change > 0) === isIncome ? 'good' : 'bad';
       compare = change === 0
         ? `<span class="sub">Same as ${esc(prevName)}</span>`
-        : `<span class="sub"><span class="${change > 0 ? 'up' : 'down'}">${change > 0 ? '▲' : '▼'} ${Math.abs(change)}%</span> ${change > 0 ? 'more' : 'less'} than ${esc(prevName)}</span>`;
+        : `<span class="sub"><span class="${tone}">${change > 0 ? '▲' : '▼'} ${Math.abs(change)}%</span> ${change > 0 ? 'more' : 'less'} than ${esc(prevName)}</span>`;
     }
 
-    let html = `<div class="card stat-total"><span class="sub">Total spent</span><span class="big">${money(total)}</span>${compare}</div>`;
+    let html = `<div class="seg" id="statsType" role="radiogroup" aria-label="Show">
+        <label class="seg-opt"><input type="radio" name="statsType" value="debit"${isIncome ? '' : ' checked'}><span>Expenses</span></label>
+        <label class="seg-opt"><input type="radio" name="statsType" value="credit"${isIncome ? ' checked' : ''}><span>Income</span></label>
+      </div>
+      <div class="card flow">
+        <div><span class="sub">Income</span><b>${money(income)}</b></div>
+        <div><span class="sub">Spent</span><b>${money(spent)}</b></div>
+        <div><span class="sub">Net</span><b class="${net < 0 ? 'neg' : ''}">${net > 0 ? '+' : ''}${money(net)}</b></div>
+      </div>
+      <div class="card stat-total"><span class="sub">${isIncome ? 'Total income' : 'Total spent'}</span><span class="big">${money(total)}</span>${compare}</div>`;
 
     if (!total) {
-      html += '<div class="empty"><span class="emoji">📊</span><strong>Nothing to chart yet</strong>Add some expenses to see where your money goes.</div>';
+      html += isIncome
+        ? '<div class="empty"><span class="emoji">💰</span><strong>No income this month</strong>Add income with the + button and pick Income.</div>'
+        : '<div class="empty"><span class="emoji">📊</span><strong>Nothing to chart yet</strong>Add some expenses to see where your money goes.</div>';
     } else {
-      const rows = categoryTotals(items);
-      html += `<div class="card"><div class="donut">${donutSvg(rows, total)}<div class="donut-center"><b>${moneyCompact(total)}</b><span>${rows.length} categor${rows.length === 1 ? 'y' : 'ies'}</span></div></div>
+      const rows = isIncome ? sourceTotals(items) : categoryTotals(items);
+      const noun = isIncome ? ['source', 'sources'] : ['category', 'categories'];
+      html += `<div class="card"><div class="donut">${donutSvg(rows, total, isIncome ? 'Income by source' : 'Spending by category')}<div class="donut-center"><b>${moneyCompact(total)}</b><span>${rows.length} ${noun[rows.length === 1 ? 0 : 1]}</span></div></div>
         <ul class="breakdown">${rows.map((r) => {
           const pct = (r.total / total) * 100;
           return `<li><div class="brk-top"><span class="dot" style="background:${r.cat.color}"></span><span class="name">${esc(r.cat.emoji)} ${esc(r.cat.name)}</span><span class="pct">${pct < 1 ? '<1' : Math.round(pct)}%</span><span class="amt">${money(r.total)}</span></div>
@@ -476,7 +547,7 @@
     // Six-month trend ending at the selected month.
     const totals = new Map();
     for (const t of state.transactions) {
-      if (t.accountId !== acct.id || t.type !== 'debit') continue;
+      if (t.accountId !== acct.id || t.type !== ui.statsType) continue;
       const key = t.date.slice(0, 7);
       totals.set(key, (totals.get(key) || 0) + t.amount);
     }
@@ -486,7 +557,7 @@
       months.push({ y: d.getFullYear(), m: d.getMonth(), total: totals.get(monthKey(d.getFullYear(), d.getMonth())) || 0 });
     }
     const max = Math.max(...months.map((x) => x.total), 1);
-    html += `<h2 class="section-title">Last 6 months</h2><div class="card"><div class="trend">${months.map((x) => {
+    html += `<h2 class="section-title">${isIncome ? 'Income' : 'Spending'}, last 6 months</h2><div class="card"><div class="trend">${months.map((x) => {
       const isCur = x.y === ui.year && x.m === ui.month;
       return `<button type="button" class="${isCur ? 'cur' : ''}" data-y="${x.y}" data-m="${x.m}" aria-label="${esc(monthName(x.y, x.m, { month: 'long', year: 'numeric' }))}: ${money(x.total)}">
         <span class="val">${x.total ? moneyCompact(x.total) : ''}</span><span class="col" style="height:${Math.max(2, (x.total / max) * 100)}px"></span>
@@ -1049,6 +1120,25 @@
   });
 
   $('#search').addEventListener('input', (ev) => { ui.query = ev.target.value; renderList(); });
+
+  $('#view-stats').addEventListener('change', (ev) => {
+    if (ev.target.name !== 'statsType') return;
+    ui.statsType = ev.target.value === 'credit' ? 'credit' : 'debit';
+    renderStats();
+  });
+
+  $('#settingsBtn').addEventListener('click', () => { ui.tab = 'settings'; render(); window.scrollTo(0, 0); });
+  $('#backBtn').addEventListener('click', () => { ui.tab = 'home'; render(); window.scrollTo(0, 0); });
+
+  $('#view-home').addEventListener('click', (ev) => {
+    if (ev.target.closest('[data-add-account]')) { openAccountSheet(null); return; }
+    const card = ev.target.closest('[data-open-account]');
+    if (!card || !acctById(card.dataset.openAccount)) return;
+    state.activeAccountId = card.dataset.openAccount;
+    ui.tab = 'list';
+    render();
+    window.scrollTo(0, 0);
+  });
 
   $('#view-stats').addEventListener('click', (ev) => {
     const bar = ev.target.closest('.trend button');

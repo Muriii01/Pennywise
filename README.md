@@ -43,7 +43,11 @@ Netlify Drop (app.netlify.com/drop) also works: drag the folder in and claim the
   currency, running balance and monthly budget
 - Add, edit and delete income or expenses (amount, category, date, note); undo after delete
 - Monthly summary, running balance, optional budget bar and daily average
-- Stats: category donut chart, breakdown, comparison with last month, 6-month trend
+- **Home tab**: every account's current balance, this month's money in and out, and the total
+  across all accounts (grouped by currency)
+- Settings live behind the gear icon at the top right of the Home tab
+- Stats for **expenses or income**: donut chart and breakdown (by category for spending, by
+  source for income), income / spent / net for the month, comparison with last month, 6-month trend
 - Search across all months
 - Custom categories, per-account currency
 - Export to CSV, back up and restore as JSON

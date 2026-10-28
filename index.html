@@ -30,13 +30,21 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
           </button>
         </div>
-        <h1 class="page-title" id="pageTitle" hidden>Settings</h1>
+        <div class="title-bar" id="titleBar" hidden>
+          <button type="button" class="icon-btn" id="backBtn" aria-label="Back to Home">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+          </button>
+          <h1 class="page-title" id="pageTitle">Home</h1>
+          <button type="button" class="icon-btn" id="settingsBtn" aria-label="Settings">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </button>
+        </div>
       </div>
       <div class="account-bar" id="accountBar" role="tablist" aria-label="Account"></div>
     </header>
 
     <main>
-      <section id="view-list" class="view" aria-label="Expenses">
+      <section id="view-list" class="view" aria-label="Expenses" hidden>
         <div id="summary"></div>
         <div class="search">
           <input id="search" type="search" placeholder="Search notes, categories, amounts" aria-label="Search expenses" autocomplete="off">
@@ -44,6 +52,7 @@
         <div id="entries"></div>
       </section>
 
+      <section id="view-home" class="view" aria-label="Home"></section>
       <section id="view-stats" class="view" aria-label="Statistics" hidden></section>
       <section id="view-settings" class="view" aria-label="Settings" hidden></section>
     </main>
@@ -54,6 +63,10 @@
 
     <nav class="tabbar" aria-label="Main">
       <div class="tabbar-inner">
+        <button type="button" class="tab" data-tab="home">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7M5 9.5V20h5v-6h4v6h5V9.5"/></svg>
+          <span>Home</span>
+        </button>
         <button type="button" class="tab" data-tab="list">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
           <span>Expenses</span>
@@ -61,10 +74,6 @@
         <button type="button" class="tab" data-tab="stats">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-8M12 20V5M19 20V9"/></svg>
           <span>Stats</span>
-        </button>
-        <button type="button" class="tab" data-tab="settings">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></svg>
-          <span>Settings</span>
         </button>
       </div>
     </nav>
